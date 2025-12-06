@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "PromptPilot – Smart Prompt Helper",
+  "version": "0.1.0",
+  "description": "Helps you turn rough prompts into clearer, more structured ones directly on ChatGPT.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://chat.openai.com/*",
+    "https://chatgpt.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": ["content-script.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
