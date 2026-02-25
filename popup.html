@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptPilot Settings</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="pp-popup">
+    <!-- Header -->
+    <div class="pp-header">
+      <span class="pp-logo">⚡</span>
+      <div>
+        <h1 class="pp-title">PromptPilot</h1>
+        <p class="pp-subtitle">Smart Prompt Enhancer</p>
+      </div>
+    </div>
+
+    <!-- Tone Setting -->
+    <section class="pp-section">
+      <label class="pp-label" for="tone-select">Response Tone</label>
+      <select class="pp-select" id="tone-select">
+        <option value="professional">Professional</option>
+        <option value="casual">Casual & Friendly</option>
+        <option value="concise">Concise & Direct</option>
+        <option value="detailed">Detailed & Thorough</option>
+      </select>
+    </section>
+
+    <!-- Active Categories -->
+    <section class="pp-section">
+      <label class="pp-label">Active Categories</label>
+      <div class="pp-toggles">
+        <label class="pp-toggle-row">
+          <span class="pp-toggle-label">💻 Coding</span>
+          <input type="checkbox" id="cat-coding" class="pp-checkbox" checked />
+          <span class="pp-toggle-slider"></span>
+        </label>
+        <label class="pp-toggle-row">
+          <span class="pp-toggle-label">📊 Data & Analytics</span>
+          <input type="checkbox" id="cat-data" class="pp-checkbox" checked />
+          <span class="pp-toggle-slider"></span>
+        </label>
+        <label class="pp-toggle-row">
+          <span class="pp-toggle-label">🚀 App Building</span>
+          <input type="checkbox" id="cat-app_build" class="pp-checkbox" checked />
+          <span class="pp-toggle-slider"></span>
+        </label>
+        <label class="pp-toggle-row">
+          <span class="pp-toggle-label">✍️ Writing & Rewrite</span>
+          <input type="checkbox" id="cat-rewrite" class="pp-checkbox" checked />
+          <span class="pp-toggle-slider"></span>
+        </label>
+        <label class="pp-toggle-row">
+          <span class="pp-toggle-label">📣 Content Creation</span>
+          <input type="checkbox" id="cat-content_creation" class="pp-checkbox" checked />
+          <span class="pp-toggle-slider"></span>
+        </label>
+        <label class="pp-toggle-row">
+          <span class="pp-toggle-label">✈️ Travel</span>
+          <input type="checkbox" id="cat-travel" class="pp-checkbox" checked />
+          <span class="pp-toggle-slider"></span>
+        </label>
+        <label class="pp-toggle-row">
+          <span class="pp-toggle-label">📄 Resume & CV</span>
+          <input type="checkbox" id="cat-resume" class="pp-checkbox" checked />
+          <span class="pp-toggle-slider"></span>
+        </label>
+        <label class="pp-toggle-row">
+          <span class="pp-toggle-label">📧 Email</span>
+          <input type="checkbox" id="cat-email" class="pp-checkbox" checked />
+          <span class="pp-toggle-slider"></span>
+        </label>
+        <label class="pp-toggle-row">
+          <span class="pp-toggle-label">🎯 Brainstorm</span>
+          <input type="checkbox" id="cat-brainstorm" class="pp-checkbox" checked />
+          <span class="pp-toggle-slider"></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Save Button -->
+    <button class="pp-save-btn" id="save-btn">Save Settings</button>
+    <p class="pp-status" id="save-status"></p>
+
+    <!-- Footer -->
+    <div class="pp-footer">
+      <span>PromptPilot v0.2.0</span>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

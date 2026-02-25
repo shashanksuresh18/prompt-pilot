@@ -1,4 +1,4 @@
-// content-script.js
+// content-script.js — PromptPilot v0.2
 
 function log(...args) {
   console.log("[PromptPilot]", ...args);
@@ -6,42 +6,43 @@ function log(...args) {
 
 log("Content script loaded on", window.location.href);
 
-// Start
+// Detect platform for any per-platform tweaks
+const PLATFORM = (() => {
+  const h = window.location.hostname;
+  if (h.includes("claude.ai")) return "claude";
+  if (h.includes("gemini.google.com")) return "gemini";
+  return "chatgpt";
+})();
+
+log("Platform detected:", PLATFORM);
+
+// ── Bootstrap ──────────────────────────────────────────────────────────────
 initPromptPilot();
 
-// ---------------- core logic ----------------
-
-// Helper: is element actually visible on screen?
-function isVisible(el) {
-  if (!el) return false;
-  const style = getComputedStyle(el);
-  if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") {
-    return false;
+// Re-inject when ChatGPT navigates (SPA) or DOM changes
+const _observer = new MutationObserver(() => {
+  if (!document.querySelector(".pp-enhance-button")) {
+    initPromptPilot();
   }
-  const rect = el.getBoundingClientRect();
-  return rect.width > 0 && rect.height > 0;
-}
+});
+_observer.observe(document.body, { childList: true, subtree: true });
 
+// ── Core init ──────────────────────────────────────────────────────────────
 function initPromptPilot() {
   const input = findChatInput();
   if (!input) {
-    log("Chat input not found yet, retrying...");
     setTimeout(initPromptPilot, 1000);
     return;
   }
 
-  // Avoid injecting twice
-  if (document.querySelector(".pp-enhance-button")) {
-    log("Enhance button already present, skipping.");
-    return;
-  }
+  if (document.querySelector(".pp-enhance-button")) return;
 
-  log("Chat input found, injecting Enhance button.", input);
+  log("Injecting Enhance button. Platform:", PLATFORM);
 
   const button = document.createElement("button");
-  button.type = "button"; // don't submit the form
-  button.textContent = "Enhance";
-  button.className = "pp-enhance-button";
+  button.type = "button";
+  button.className = `pp-enhance-button pp-platform-${PLATFORM}`;
+  button.innerHTML = `<span class="pp-btn-icon">⚡</span><span class="pp-btn-text">Enhance</span>`;
 
   const container = input.closest("form") || input.parentElement || document.body;
   if (container && getComputedStyle(container).position === "static") {
@@ -56,94 +57,158 @@ function initPromptPilot() {
   });
 }
 
-// Prefer visible contenteditable inputs over hidden textareas
+// ── Input helpers ──────────────────────────────────────────────────────────
+function isVisible(el) {
+  if (!el) return false;
+  const s = getComputedStyle(el);
+  if (s.display === "none" || s.visibility === "hidden" || s.opacity === "0") return false;
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.height > 0;
+}
+
 function findChatInput() {
-  // 1) Visible contenteditable divs
-  const editableCandidates = Array.from(
-    document.querySelectorAll(
-      'div[contenteditable="true"], div[contenteditable="plaintext-only"], div[contenteditable]'
-    )
+  const editables = Array.from(
+    document.querySelectorAll('div[contenteditable="true"], div[contenteditable="plaintext-only"], div[contenteditable]')
   ).filter(isVisible);
+  if (editables.length) return editables[editables.length - 1];
 
-  log("Visible contenteditable candidates:", editableCandidates.length);
-
-  if (editableCandidates.length > 0) {
-    return editableCandidates[editableCandidates.length - 1];
-  }
-
-  // 2) Fallback: visible textareas (if any)
-  const textareaCandidates = Array.from(document.querySelectorAll("textarea")).filter(isVisible);
-
-  log("Visible textarea candidates:", textareaCandidates.length);
-
-  if (textareaCandidates.length > 0) {
-    return textareaCandidates[textareaCandidates.length - 1];
-  }
-
+  const textareas = Array.from(document.querySelectorAll("textarea")).filter(isVisible);
+  if (textareas.length) return textareas[textareas.length - 1];
   return null;
 }
 
 function getInputText(el) {
   if (!el) return "";
-
-  if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") {
-    return el.value;
-  }
-
-  if (el.isContentEditable) {
-    // Use innerText; normalize NBSP
-    return (el.innerText || el.textContent || "").replace(/\u00A0/g, " ");
-  }
-
+  if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") return el.value;
+  if (el.isContentEditable) return (el.innerText || el.textContent || "").replace(/\u00A0/g, " ");
   return "";
 }
 
 function setInputText(el, text) {
   if (!el) return;
-
   if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") {
     el.value = text;
   } else if (el.isContentEditable) {
     el.innerText = text;
   }
-
   el.dispatchEvent(new Event("input", { bubbles: true }));
+  // Move cursor to end for contenteditable
+  if (el.isContentEditable) {
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
 }
 
+// ── Enhance flow ───────────────────────────────────────────────────────────
 function handleEnhanceClick(initialInput) {
-  // Re-find in case DOM changed
   const input = findChatInput() || initialInput;
   const originalText = getInputText(input);
-
-  log("Current input text:", JSON.stringify(originalText));
 
   if (!originalText || !originalText.trim()) {
     showToast("Type something first, then I can enhance it.");
     return;
   }
 
-  log("Sending text to background for enhancement...");
+  const button = document.querySelector(".pp-enhance-button");
+  if (button) {
+    button.classList.add("pp-loading");
+    button.innerHTML = `<span class="pp-btn-text">Enhancing…</span>`;
+  }
 
-  chrome.runtime.sendMessage(
-    { type: "ENHANCE_PROMPT", text: originalText },
-    (response) => {
-      if (chrome.runtime.lastError) {
-        console.error("[PromptPilot] Error:", chrome.runtime.lastError);
-        showToast("Error enhancing prompt. Check console.");
-        return;
-      }
-
-      if (response && response.enhanced) {
-        setInputText(input, response.enhanced);
-        showToast("Prompt enhanced ✔");
-      } else {
-        showToast("No enhanced text received.");
-      }
+  chrome.runtime.sendMessage({ type: "ENHANCE_PROMPT", text: originalText }, (response) => {
+    // Restore button
+    if (button) {
+      button.classList.remove("pp-loading");
+      button.innerHTML = `<span class="pp-btn-icon">⚡</span><span class="pp-btn-text">Enhance</span>`;
     }
-  );
+
+    if (chrome.runtime.lastError) {
+      console.error("[PromptPilot] Error:", chrome.runtime.lastError);
+      showToast("Error enhancing prompt.");
+      return;
+    }
+
+    if (response && response.enhanced) {
+      showPreviewModal(originalText, response.enhanced, input);
+    } else {
+      showToast("No enhanced text received.");
+    }
+  });
 }
 
-// Simple toast notification
+// ── Preview Modal ──────────────────────────────────────────────────────────
+function showPreviewModal(original, enhanced, inputEl) {
+  // Remove existing modal
+  document.querySelector(".pp-modal-overlay")?.remove();
+
+  const overlay = document.createElement("div");
+  overlay.className = "pp-modal-overlay";
+
+  overlay.innerHTML = `
+    <div class="pp-modal" role="dialog" aria-modal="true" aria-label="Prompt Preview">
+      <div class="pp-modal-header">
+        <span class="pp-modal-logo">⚡</span>
+        <span class="pp-modal-title">Enhanced Prompt Preview</span>
+        <button class="pp-modal-close" title="Cancel">✕</button>
+      </div>
+      <div class="pp-modal-body">
+        <div class="pp-panel">
+          <div class="pp-panel-label">Original</div>
+          <div class="pp-panel-text pp-original-text">${escapeHtml(original)}</div>
+        </div>
+        <div class="pp-panel pp-panel-enhanced">
+          <div class="pp-panel-label">Enhanced <span class="pp-panel-hint">(you can edit below)</span></div>
+          <div class="pp-panel-text pp-enhanced-text" contenteditable="true">${escapeHtml(enhanced)}</div>
+        </div>
+      </div>
+      <div class="pp-modal-actions">
+        <button class="pp-btn-cancel">Cancel</button>
+        <button class="pp-btn-use">Use This ✓</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Animate in
+  requestAnimationFrame(() => overlay.classList.add("pp-modal-visible"));
+
+  const closeModal = () => {
+    overlay.classList.remove("pp-modal-visible");
+    setTimeout(() => overlay.remove(), 200);
+  };
+
+  overlay.querySelector(".pp-modal-close").addEventListener("click", closeModal);
+  overlay.querySelector(".pp-btn-cancel").addEventListener("click", closeModal);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+
+  overlay.querySelector(".pp-btn-use").addEventListener("click", () => {
+    const editedText = overlay.querySelector(".pp-enhanced-text").innerText;
+    setInputText(inputEl, editedText);
+    closeModal();
+    showToast("Prompt enhanced ✔");
+  });
+
+  // Close on Escape
+  const onKeyDown = (e) => {
+    if (e.key === "Escape") { closeModal(); document.removeEventListener("keydown", onKeyDown); }
+  };
+  document.addEventListener("keydown", onKeyDown);
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>");
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
 function showToast(message) {
   let toast = document.querySelector(".pp-toast");
   if (!toast) {
@@ -152,9 +217,10 @@ function showToast(message) {
     document.body.appendChild(toast);
   }
   toast.textContent = message;
-
-  clearTimeout(showToast._timeoutId);
-  showToast._timeoutId = setTimeout(() => {
-    toast.remove();
-  }, 2000);
+  toast.classList.add("pp-toast-visible");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => {
+    toast.classList.remove("pp-toast-visible");
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
 }

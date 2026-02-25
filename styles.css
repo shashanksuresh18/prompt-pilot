@@ -1,32 +1,292 @@
-/* styles.css */
+/* styles.css — PromptPilot v0.2 */
 
+/* ── Enhance Button ─────────────────────────────────────────────────────── */
 .pp-enhance-button {
   position: absolute;
-  right: 12px;
-  bottom: 60px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: none;
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 18px;
   font-size: 12px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   cursor: pointer;
-  background: #111827;
-  color: #f9fafb;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-  z-index: 999999;
+  transition: transform 0.1s ease, filter 0.1s ease, opacity 0.15s;
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+/* ChatGPT: Black/Dark Theme */
+.pp-platform-chatgpt.pp-enhance-button {
+  background: #000;
+  color: #fff;
+  border: 1px solid #333;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  top: 10px;
+  right: 12px;
+}
+
+/* Claude: Lightish Brown / Tan Theme */
+.pp-platform-claude.pp-enhance-button {
+  background: #f5f2ed;
+  color: #6a4a3a;
+  border: 1px solid #dcd7cf;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  bottom: 12px;
+  right: 50px;
+  /* Move away from voice/upload buttons */
+}
+
+/* Gemini: Light Bluish Theme */
+.pp-platform-gemini.pp-enhance-button {
+  background: #eef4ff;
+  color: #1a73e8;
+  border: 1px solid #d2e3fc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  top: 12px;
+  right: 12px;
 }
 
 .pp-enhance-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.pp-enhance-button:active {
+  transform: translateY(0px) scale(0.97);
+}
+
+.pp-enhance-button.pp-loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pp-btn-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ── Modal Overlay ──────────────────────────────────────────────────────── */
+.pp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.pp-modal-overlay.pp-modal-visible {
+  opacity: 1;
+}
+
+.pp-modal {
+  width: 680px;
+  max-width: 94vw;
+  max-height: 85vh;
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  transform: scale(0.95) translateY(12px);
+  transition: transform 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.pp-modal-overlay.pp-modal-visible .pp-modal {
+  transform: scale(1) translateY(0);
+}
+
+/* Modal Header */
+.pp-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pp-modal-logo {
+  font-size: 20px;
+  background: linear-gradient(135deg, #a78bfa, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pp-modal-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.pp-modal-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.pp-modal-close:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* Modal Body */
+.pp-modal-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+@media (max-width: 520px) {
+  .pp-modal-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pp-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pp-panel-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+.pp-panel-hint {
+  font-style: italic;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #475569;
+  font-size: 10.5px;
+}
+
+.pp-panel-text {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  max-height: 320px;
+  min-height: 100px;
+}
+
+.pp-original-text {
+  background: #1e1e30;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+
+.pp-enhanced-text {
+  background: #0f1f2e;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  color: #e2e8f0;
+  outline: none;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+
+.pp-enhanced-text:focus {
+  border-color: rgba(124, 58, 237, 0.7);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+/* Modal Actions */
+.pp-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pp-btn-cancel {
+  padding: 9px 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pp-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #e2e8f0;
+}
+
+.pp-btn-use {
+  padding: 9px 20px;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(124, 58, 237, 0.35);
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.pp-btn-use:hover {
   opacity: 0.9;
 }
 
+.pp-btn-use:active {
+  transform: scale(0.97);
+}
+
+/* ── Toast ──────────────────────────────────────────────────────────────── */
 .pp-toast {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #111827;
-  color: #f9fafb;
-  padding: 10px 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  z-index: 999999;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  z-index: 9999999;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.pp-toast.pp-toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }

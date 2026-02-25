@@ -1,15 +1,31 @@
-// background.js
+// background.js — PromptPilot v0.2
 
 console.log("[PromptPilot] Background service worker loaded.");
 
+const DEFAULT_SETTINGS = {
+  tone: "professional",
+  disabledCategories: []
+};
+
+const TONE_INSTRUCTIONS = {
+  professional: "Tone: professional, precise, and polished.",
+  casual: "Tone: conversational, warm, and friendly.",
+  concise: "Tone: concise and direct — keep explanations short.",
+  detailed: "Tone: thorough and detailed — go in depth where helpful."
+};
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!message || message.type !== "ENHANCE_PROMPT") return;
+  if (!message || message.type !== "ENHANCE_PROMPT") return true;
 
   const original = message.text || "";
-  // Check length for heuristics later
-  const enhanced = enhancePrompt(original);
 
-  sendResponse({ enhanced });
+  // Read settings from storage, then enhance
+  chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {
+    const enhanced = enhancePrompt(original, settings);
+    sendResponse({ enhanced });
+  });
+
+  return true; // keep channel open for async response
 });
 
 // ---------------- core enhancement logic ----------------
@@ -122,17 +138,21 @@ function classifyIntent(text) {
 }
 
 // Generic builder: same structure for ALL prompts
-function buildStructuredPrompt({ role, goal, userText, context, assumptions, constraints, outputFormat }) {
+function buildStructuredPrompt({ role, goal, userText, context, assumptions, constraints, outputFormat, tone }) {
+  // Prepend tone instruction to constraints
+  const toneInstruction = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.professional;
+  const allConstraints = [toneInstruction, ...(constraints || [])];
+
   const assumptionText =
     assumptions && assumptions.length
       ? "Assumptions (update if needed):\n" +
-        assumptions.map((a) => `- ${a}`).join("\n") +
-        "\n\n"
+      assumptions.map((a) => `- ${a}`).join("\n") +
+      "\n\n"
       : "";
 
   const constraintText =
-    constraints && constraints.length
-      ? "Constraints:\n" + constraints.map((c) => `- ${c}`).join("\n") + "\n\n"
+    allConstraints.length
+      ? "Constraints:\n" + allConstraints.map((c) => `- ${c}`).join("\n") + "\n\n"
       : "";
 
   const outputText =
@@ -153,7 +173,7 @@ function buildStructuredPrompt({ role, goal, userText, context, assumptions, con
   );
 }
 
-function enhancePrompt(text) {
+function enhancePrompt(text, settings = {}) {
   const trimmed = text.trim();
   if (!trimmed) return text;
 
@@ -162,42 +182,41 @@ function enhancePrompt(text) {
     return trimmed;
   }
 
-  const intent = classifyIntent(trimmed);
-  console.log("[PromptPilot] Classified intent:", intent);
+  const tone = settings.tone || "professional";
+  const disabled = settings.disabledCategories || [];
+
+  let intent = classifyIntent(trimmed);
+  console.log("[PromptPilot] Classified intent:", intent, "| Tone:", tone);
+
+  // Fall back to generic if category is disabled
+  if (disabled.includes(intent)) {
+    console.log("[PromptPilot] Category disabled, falling back to generic.");
+    intent = "generic";
+  }
 
   switch (intent) {
-    case "coding":
-      return buildCodingPrompt(trimmed);
-    case "data":
-      return buildDataPrompt(trimmed);
-    case "app_build":
-      return buildAppBuildPrompt(trimmed);
-    case "rewrite":
-      return buildRewritePrompt(trimmed);
-    case "content_creation":
-      return buildContentCreationPrompt(trimmed);
-    case "travel":
-      return buildTravelPrompt(trimmed);
-    case "resume":
-      return buildResumePrompt(trimmed);
-    case "email":
-      return buildEmailPrompt(trimmed);
-    case "explanation":
-      return buildExplanationPrompt(trimmed);
-    case "brainstorm":
-      return buildBrainstormPrompt(trimmed);
-    default:
-      return buildGenericPrompt(trimmed);
+    case "coding": return buildCodingPrompt(trimmed, tone);
+    case "data": return buildDataPrompt(trimmed, tone);
+    case "app_build": return buildAppBuildPrompt(trimmed, tone);
+    case "rewrite": return buildRewritePrompt(trimmed, tone);
+    case "content_creation": return buildContentCreationPrompt(trimmed, tone);
+    case "travel": return buildTravelPrompt(trimmed, tone);
+    case "resume": return buildResumePrompt(trimmed, tone);
+    case "email": return buildEmailPrompt(trimmed, tone);
+    case "explanation": return buildExplanationPrompt(trimmed, tone);
+    case "brainstorm": return buildBrainstormPrompt(trimmed, tone);
+    default: return buildGenericPrompt(trimmed, tone);
   }
 }
 
 // --------- domain-specific templates ---------
 
-function buildCodingPrompt(userText) {
+function buildCodingPrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are a senior software engineer and educator.",
     goal: "Help the user understand the problem and provide a robust code solution.",
     userText,
+    tone,
     context: "The user is working on a coding task or facing a bug.",
     assumptions: [
       "The user has basic familiarity with the language they mention.",
@@ -217,11 +236,12 @@ function buildCodingPrompt(userText) {
   });
 }
 
-function buildDataPrompt(userText) {
+function buildDataPrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are an advanced Data Analyst and Spreadsheet expert.",
     goal: "Provide a precise formula, SQL query, or data interpretation.",
     userText,
+    tone,
     context: "The user is working with data tools like Excel, Google Sheets, or SQL.",
     assumptions: [
       "Unless specified, assume the user is using the latest version of Excel/Google Sheets.",
@@ -240,11 +260,12 @@ function buildDataPrompt(userText) {
   });
 }
 
-function buildAppBuildPrompt(userText) {
+function buildAppBuildPrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are a senior full-stack engineer and product coach.",
     goal: "Help the user go from a rough app idea to a concrete, buildable plan.",
     userText,
+    tone,
     context: "The user wants to build a web app or product but needs structure and guidance.",
     assumptions: [
       "The user can do some coding or is willing to learn, or may work with a small team.",
@@ -265,11 +286,12 @@ function buildAppBuildPrompt(userText) {
   });
 }
 
-function buildRewritePrompt(userText) {
+function buildRewritePrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are an expert editor and copywriter.",
     goal: "Improve the clarity, grammar, and flow of the text while preserving the original meaning.",
     userText,
+    tone,
     context: "The user has provided text that needs polishing or summarizing.",
     assumptions: [
       "The user wants to retain the original voice unless requested otherwise.",
@@ -287,11 +309,12 @@ function buildRewritePrompt(userText) {
   });
 }
 
-function buildContentCreationPrompt(userText) {
+function buildContentCreationPrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are a creative digital marketing strategist and content creator.",
     goal: "Create engaging content tailored to the specific platform and audience.",
     userText,
+    tone,
     context: "The user needs content for a blog, social media, or marketing campaign.",
     assumptions: [
       "The goal is high engagement and value, not just keywords.",
@@ -310,11 +333,12 @@ function buildContentCreationPrompt(userText) {
   });
 }
 
-function buildTravelPrompt(userText) {
+function buildTravelPrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are an expert travel planner with deep knowledge of major cities worldwide.",
     goal: "Plan a clear, enjoyable itinerary or travel plan that balances practicality, comfort and good experiences.",
     userText,
+    tone,
     context: "The user is using an AI chat tool and wants a clear, detailed travel plan or route.",
     assumptions: [
       "Budget is moderate (not ultra-luxury, not backpacker) unless the user says otherwise.",
@@ -335,11 +359,12 @@ function buildTravelPrompt(userText) {
   });
 }
 
-function buildResumePrompt(userText) {
+function buildResumePrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are an expert resume writer who specialises in tech, data and analytics roles.",
     goal: "Turn the user's request into a high-impact, ATS-friendly resume.",
     userText,
+    tone,
     context: "The user wants a job-ready resume that highlights impact and modern tools.",
     assumptions: [
       "The user is early–mid career unless otherwise stated.",
@@ -360,11 +385,12 @@ function buildResumePrompt(userText) {
   });
 }
 
-function buildEmailPrompt(userText) {
+function buildEmailPrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are an expert communication coach and email writer.",
     goal: "Draft a clear, effective email that matches the user's situation and goal.",
     userText,
+    tone,
     context: "The user needs a professional, well-structured email.",
     assumptions: [
       "Tone should be professional but warm unless the user requests very formal or very casual.",
@@ -383,11 +409,12 @@ function buildEmailPrompt(userText) {
   });
 }
 
-function buildExplanationPrompt(userText) {
+function buildExplanationPrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are a clear, patient teacher.",
     goal: "Explain the topic so a motivated learner can truly understand it.",
     userText,
+    tone,
     context: "The user wants an explanation, not just a short definition.",
     assumptions: [
       "The user is willing to read a detailed explanation.",
@@ -406,11 +433,12 @@ function buildExplanationPrompt(userText) {
   });
 }
 
-function buildBrainstormPrompt(userText) {
+function buildBrainstormPrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are a creative collaborator and idea generator.",
     goal: "Generate diverse, specific ideas the user can actually act on.",
     userText,
+    tone,
     context: "The user wants help coming up with options, not just one idea.",
     assumptions: [
       "The user is open to a mix of safe and bold ideas.",
@@ -428,11 +456,12 @@ function buildBrainstormPrompt(userText) {
   });
 }
 
-function buildGenericPrompt(userText) {
+function buildGenericPrompt(userText, tone) {
   return buildStructuredPrompt({
     role: "You are an expert assistant.",
     goal: "Help the user achieve their goal in a clear, structured way.",
     userText,
+    tone,
     context: "The user is using an AI chat tool and wants a clear, detailed response.",
     assumptions: [],
     constraints: [

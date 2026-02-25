@@ -1,0 +1,195 @@
+/* popup.css — PromptPilot Settings Popup */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 360px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0f0f1a;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.pp-popup {
+  padding: 16px;
+}
+
+/* Header */
+.pp-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 16px;
+}
+
+.pp-logo {
+  font-size: 28px;
+  background: linear-gradient(135deg, #a78bfa, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px rgba(167,139,250,0.5));
+}
+
+.pp-title {
+  font-size: 16px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #a78bfa, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pp-subtitle {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+/* Sections */
+.pp-section {
+  margin-bottom: 16px;
+}
+
+.pp-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+/* Tone Select */
+.pp-select {
+  width: 100%;
+  padding: 9px 12px;
+  background: #1e1e30;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.pp-select:focus {
+  border-color: #a78bfa;
+}
+
+/* Toggle Rows */
+.pp-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pp-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.pp-toggle-row:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.pp-toggle-label {
+  font-size: 12.5px;
+  color: #cbd5e1;
+}
+
+/* Hide real checkbox */
+.pp-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Custom toggle slider */
+.pp-toggle-slider {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  background: #334155;
+  border-radius: 9px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.pp-toggle-slider::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #94a3b8;
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.pp-checkbox:checked + .pp-toggle-slider {
+  background: linear-gradient(135deg, #a78bfa, #60a5fa);
+}
+
+.pp-checkbox:checked + .pp-toggle-slider::after {
+  transform: translateX(16px);
+  background: #fff;
+}
+
+/* Save Button */
+.pp-save-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  background: linear-gradient(135deg, #a78bfa, #60a5fa);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.pp-save-btn:hover {
+  opacity: 0.9;
+}
+
+.pp-save-btn:active {
+  transform: scale(0.98);
+}
+
+.pp-status {
+  text-align: center;
+  font-size: 11px;
+  color: #a78bfa;
+  min-height: 18px;
+  margin-top: 6px;
+  transition: opacity 0.3s;
+}
+
+/* Footer */
+.pp-footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  text-align: center;
+  font-size: 10px;
+  color: #334155;
+}
