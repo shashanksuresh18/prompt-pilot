@@ -42,7 +42,7 @@ function initPromptPilot() {
   const button = document.createElement("button");
   button.type = "button";
   button.className = `pp-enhance-button pp-platform-${PLATFORM}`;
-  button.innerHTML = `<span class="pp-btn-icon">⚡</span><span class="pp-btn-text">Enhance</span>`;
+  button.innerHTML = `<span class="pp-btn-icon">🚀</span><span class="pp-btn-text">Enhance</span>`;
 
   const container = input.closest("form") || input.parentElement || document.body;
   if (container && getComputedStyle(container).position === "static") {
@@ -123,7 +123,7 @@ function handleEnhanceClick(initialInput) {
     // Restore button
     if (button) {
       button.classList.remove("pp-loading");
-      button.innerHTML = `<span class="pp-btn-icon">⚡</span><span class="pp-btn-text">Enhance</span>`;
+      button.innerHTML = `<span class="pp-btn-icon">🚀</span><span class="pp-btn-text">Enhance</span>`;
     }
 
     if (chrome.runtime.lastError) {
@@ -151,7 +151,7 @@ function showPreviewModal(original, enhanced, inputEl) {
   overlay.innerHTML = `
     <div class="pp-modal" role="dialog" aria-modal="true" aria-label="Prompt Preview">
       <div class="pp-modal-header">
-        <span class="pp-modal-logo">⚡</span>
+        <span class="pp-modal-logo">🚀</span>
         <span class="pp-modal-title">Enhanced Prompt Preview</span>
         <button class="pp-modal-close" title="Cancel">✕</button>
       </div>
